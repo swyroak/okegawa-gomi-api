@@ -6,12 +6,20 @@
 uvicorn okegawa_gomi_api:app --reload
 """
 from fastapi import FastAPI, Query, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from datetime import date, datetime
 
 app = FastAPI(
     title="桶川市ごみ収集日 API",
     description="桶川市の地区別ごみ収集日を返します。東地区は令和8年度の正確な日付データを保持しています。",
     version="2.0.0",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["GET"],
+    allow_headers=["*"],
 )
 
 EAST_SCHEDULE = {
