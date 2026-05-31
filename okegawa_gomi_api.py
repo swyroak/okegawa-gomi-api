@@ -8,6 +8,7 @@ uvicorn okegawa_gomi_api:app --reload
 from fastapi import FastAPI, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import date, datetime
+import yfinance as yf
 
 app = FastAPI(
     title="桶川市ごみ収集日 API",
@@ -95,7 +96,29 @@ def fmt_month(mk, md):
 
 @app.get("/")
 def root():
-    return {"name":"桶川市ごみ収集日 API","version":"2.0.0","docs":"/docs"}
+    return {"name":"桶川市ごみ収集日 API","version":"2.1.0","docs":"/docs"}
+
+
+MARKET_SYMBOLS = ["VOO", "QQQ", "EPI", "CXSE", "BTC-USD"]
+
+@app.get("/markets")
+def get_markets():
+    """株価・ETF・仮想通貨の現在価格を返す"""
+    result = []
+    tickers = yf.Tickers(" ".join(MARKET_SYMBOLS))
+    for sym in MARKET_SYMBOLS:
+        try:
+            info = tickers.tickers[sym].fast_info
+            result.append({
+                "symbol": sym.replace("-USD", ""),
+                "price": round(float(info.last_price), 2),
+                "change_pct": round(float(
+                    (info.last_price - info.previous_close) / info.previous_close * 100
+                ), 2),
+            })
+        except Exception as e:
+            result.append({"symbol": sym.replace("-USD", ""), "price": None, "change_pct": None, "error": str(e)})
+    return {"symbols": result}
 
 
 @app.get("/schedule")
